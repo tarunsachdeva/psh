@@ -1,0 +1,21 @@
+{
+  "name": "pi-shell-repl",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A natural-language shell wrapper powered by pi",
+  "bin": {
+    "psh": "bin/pi-shell"
+  },
+  "scripts": {
+    "test": "bash -n bin/pi-shell && bash -n bin/pi-shell-uninstall && bash -n scripts/install.sh && bash -n scripts/uninstall.sh"
+  },
+  "keywords": [
+    "pi",
+    "shell",
+    "nlp",
+    "terminal",
+    "alias"
+  ],
+  "author": "Tarun Sachdeva <tarunsachdeva>",
+  "license": "MIT"
+}

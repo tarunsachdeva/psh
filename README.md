@@ -119,6 +119,27 @@ make test
 make clean
 ```
 
+## Package metadata
+
+This repo also includes:
+- `package.json` for JS tooling and metadata
+- `VERSION` file for release tagging
+
+You can install dependencies and run syntax checks with:
+
+```bash
+npm test
+```
+
+## Suggested release workflow
+
+```bash
+git -C ~/code/pi-shell-repl add .
+git -C ~/code/pi-shell-repl commit -m "chore: release"
+git -C ~/code/pi-shell-repl tag v0.1.0
+git -C ~/code/pi-shell-repl push --tags
+```
+
 ## Docs notes
 
 - `pi-shell` accepts `PI_*` environment variables for behavior.

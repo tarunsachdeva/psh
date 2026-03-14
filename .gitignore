@@ -1,0 +1,12 @@
+.DS_Store
+
+# local shell usage artifacts
+*.log
+.pi-shell_history
+
+# system / editor
+.vscode/
+.idea/
+
+# temporary installer backups
+ghostty.config.bak*
