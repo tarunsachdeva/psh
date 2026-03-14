@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+PI_SCRIPT="$HOME/.local/bin/pi-shell"
+GHOSTTY_CONFIG="$HOME/.config/ghostty/config"
+BACKUP_GLOB="$HOME/.config/ghostty/config.bak.pi-shell.*"
+
+if [ -x "$PI_SCRIPT" ]; then
+  rm -f "$PI_SCRIPT"
+  echo "Removed $PI_SCRIPT"
+else
+  echo "No pi-shell script found at $PI_SCRIPT"
+fi
+
+if [ -f "$GHOSTTY_CONFIG" ]; then
+  # Remove pi-shell command line from ghostty config
+  tmp=$(mktemp)
+  awk '!/^command[[:space:]]*=.*pi-shell/ { print }' "$GHOSTTY_CONFIG" >"$tmp"
+  mv "$tmp" "$GHOSTTY_CONFIG"
+  echo "Removed pi-shell command line from $GHOSTTY_CONFIG"
+
+  # Optional restore of latest backup made by installer
+  latest_backup="$(ls -1t $BACKUP_GLOB 2>/dev/null | head -n 1 || true)"
+  if [ -n "$latest_backup" ]; then
+    read -r -p "Restore latest backup '$latest_backup'? [y/N] " ok
+    if [[ "${ok,,}" == y || "${ok,,}" == yes ]]; then
+      cp "$latest_backup" "$GHOSTTY_CONFIG"
+      echo "Restored $GHOSTTY_CONFIG from $latest_backup"
+    fi
+  fi
+fi
+
+echo "Uninstall complete."

@@ -1,0 +1,303 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+PI_BIN="${PI_BIN:-}"
+PI_PROMPT="${PI_PROMPT:-pi> }"
+PI_AUTO_CONFIRM_SAFE="${PI_AUTO_CONFIRM_SAFE:-1}"
+PI_ASSUME_YES="${PI_ASSUME_YES:-0}"
+PI_SHOW_TRANSLATION="${PI_SHOW_TRANSLATION:-1}"
+PI_HISTORY_FILE="${PI_HISTORY_FILE:-$HOME/.pi-shell_history}"
+PI_MAX_HISTORY="${PI_MAX_HISTORY:-500}"
+
+if [ -z "$PI_BIN" ]; then
+  for candidate in pi "$HOME/.bun/bin/pi" "$HOME/.local/bin/pi" "$HOME/.npm-global/bin/pi" "/opt/homebrew/bin/pi" "/usr/local/bin/pi"; do
+    if command -v "$candidate" >/dev/null 2>&1; then
+      PI_BIN="$candidate"
+      break
+    fi
+  done
+fi
+
+if [ -z "$PI_BIN" ]; then
+  echo "pi not found in PATH or common install locations." >&2
+  echo "Set PI_BIN manually, e.g. PI_BIN=$HOME/.bun/bin/pi" >&2
+  exit 1
+fi
+
+PI_TRANSLATE_PROMPT=$(cat <<'EOF'
+You are a shell translator. Convert the request into a single bash command.
+Rules:
+- Return only one command.
+- No markdown, no code blocks, no explanation.
+- Do not include comments.
+- Use the provided working directory as context.
+- If request is ambiguous, prefer the safest sensible command.
+
+Context:
+Working directory: %WORKDIR%
+
+Request:
+%REQUEST%
+EOF
+)
+HISTFILE="$PI_HISTORY_FILE"
+: >"$HISTFILE"
+
+function prompt_text() {
+  if [ -z "${PI_PROMPT}" ]; then
+    printf 'pi> '
+  else
+    printf '%s' "${PI_PROMPT}"
+  fi
+}
+
+function add_to_history() {
+  local entry="$1"
+  printf '%s\n' "$entry" >>"$HISTFILE"
+
+  if command -v awk >/dev/null 2>&1; then
+    local lines
+    lines=$(awk 'NF' "$HISTFILE" | wc -l | tr -d ' ')
+    if [ "$lines" -gt "$PI_MAX_HISTORY" ]; then
+      local to_remove=$((lines - PI_MAX_HISTORY))
+      tail -n +$((to_remove + 1)) "$HISTFILE" >"${HISTFILE}.tmp" && mv "${HISTFILE}.tmp" "$HISTFILE"
+    fi
+  fi
+}
+
+function trim() {
+  sed -E 's/^[[:space:]]+|[[:space:]]+$//g'
+}
+
+function extract_command() {
+  local raw="$1"
+
+  # strip code fences and surrounding whitespace/newlines
+  echo "$raw" \
+    | sed -E 's/```[a-zA-Z0-9]*//g' \
+    | sed -E 's/[[:space:]]+$//' \
+    | sed -E 's/^[[:space:]]+//' \
+    | sed '/^$/d'
+}
+
+function translate_request() {
+  local request="$1"
+  local prompt
+  prompt="${PI_TRANSLATE_PROMPT//%WORKDIR%/$(pwd)}"
+  prompt="${prompt//%REQUEST%/$request}"
+
+  local response
+  response="$($PI_BIN -p "$prompt")" || {
+    echo "pi translation failed." >&2
+    return 1
+  }
+
+  local command_line
+  command_line="$(extract_command "$response" | head -n 1)"
+  command_line="$(echo "$command_line" | sed -E 's/[[:space:]]+$//; s/^[[:space:]]+//')"
+
+  if [ -z "$command_line" ]; then
+    echo ""
+    return 1
+  fi
+
+  printf '%s' "$command_line"
+}
+
+function is_dangerous() {
+  local cmd="$1"
+  local lowered
+  lowered="$(printf '%s' "$cmd" | tr '[:upper:]' '[:lower:]')"
+
+  # hard safety checks
+  if printf '%s' "$lowered" | grep -Eq "(^|[[:space:]])(rm[[:space:]]+-rf|mkfs|:\(\)\s*\{\s*:\s*\|\s*:;\s*\}|\bchmod\s+777\b|\bsudo\b|\bdd\b|\bshred\b)"; then
+    return 0
+  fi
+
+  if printf '%s' "$lowered" | grep -Eq "\|\s*(sh|bash|zsh|fish)$"; then
+    return 0
+  fi
+
+  return 1
+}
+
+function first_token() {
+  # shellcheck disable=SC2001
+  local t="$1"
+  t="$(printf '%s' "$t" | sed 's/^[[:space:]]*//')"
+  t="${t%% *}"
+  echo "$t"
+}
+
+function should_auto_run() {
+  local cmd="$1"
+
+  if is_dangerous "$cmd"; then
+    return 1
+  fi
+
+  local token
+  token="$(first_token "$cmd")"
+
+  case "$token" in
+    ls|ll|la|l|pwd|cd|cat|echo|git|find|rg|grep|sed|awk|sort|uniq|wc|head|tail|du|df|tree|which|whoami|uname|date|ps|dirs|pushd|popd)
+      return 0
+      ;;
+  esac
+
+  return 1
+}
+
+function ask_to_run() {
+  local cmd="$1"
+  local default_no="${2:-n}"
+  local response
+
+  # Skip prompts entirely when assume-yes mode is enabled.
+  if [ "$PI_ASSUME_YES" = "1" ]; then
+    return 0
+  fi
+
+  if [ "$default_no" = "y" ]; then
+    read -r -p "Run: $cmd [Y/n] " response
+    response="${response:-y}"
+  else
+    read -r -p "Run: $cmd [y/N] " response
+    response="${response:-N}"
+  fi
+
+  case "$response" in
+    [yY] | [yY][eE][sS])
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+function run_command() {
+  local cmd="$1"
+
+  # print command for visibility
+  if [ "$PI_SHOW_TRANSLATION" = "1" ]; then
+    printf "Executing: %s\n" "$cmd"
+  fi
+
+  # execute in current shell context so cd and other shell builtins persist
+  eval "$cmd"
+  local status=$?
+
+  if [ $status -ne 0 ]; then
+    echo "Command exited with status $status" >&2
+  fi
+  return $status
+}
+
+function print_help() {
+  cat <<'EOF'
+pi-shell commands:
+  /help                Show this help
+  /quit or /exit       Exit
+  /raw <command>       Run command without PI translation
+  /auto on|off         Toggle auto-confirm for safe commands (currently: on/off)
+  /noconfirm on|off    Skip or enable prompts entirely (currently: off)
+  /show on|off         Toggle showing translated command (currently: on/off)
+
+Any other input is sent to pi for translation, then reviewed/executed.
+Examples:
+  /raw git status
+  what's in this dir
+  show large files
+EOF
+}
+
+cat <<'EOF'
+pi-shell: powered by pi
+Type /help for commands.
+EOF
+
+while true; do
+  if [ -n "${PI_SHELL_PREVIEW:-}" ]; then
+    echo
+  fi
+
+  read -r -e -p "$(prompt_text)" input || break
+
+  case "$input" in
+    "")
+      continue
+      ;;
+    /quit|/exit)
+      break
+      ;;
+    exit|quit)
+      break
+      ;;
+    /help)
+      print_help
+      continue
+      ;;
+    /raw\ *)
+      raw_cmd="${input#/raw }"
+      add_to_history "$raw_cmd"
+      run_command "$raw_cmd"
+      continue
+      ;;
+    /auto\ on)
+      PI_AUTO_CONFIRM_SAFE=1
+      echo "Auto-run for safe commands: on"
+      continue
+      ;;
+    /auto\ off)
+      PI_AUTO_CONFIRM_SAFE=0
+      echo "Auto-run for safe commands: off"
+      continue
+      ;;
+    /noconfirm\ on)
+      PI_ASSUME_YES=1
+      echo "Promptless mode: on"
+      continue
+      ;;
+    /noconfirm\ off)
+      PI_ASSUME_YES=0
+      echo "Promptless mode: off"
+      continue
+      ;;
+    /show\ on)
+      PI_SHOW_TRANSLATION=1
+      echo "Show translated command: on"
+      continue
+      ;;
+    /show\ off)
+      PI_SHOW_TRANSLATION=0
+      echo "Show translated command: off"
+      continue
+      ;;
+  esac
+
+  # default path: translate via pi
+  translated="$(translate_request "$input")" || {
+    echo "Could not translate input." >&2
+    continue
+  }
+
+  add_to_history "$translated"
+
+  if should_auto_run "$translated" && [ "$PI_AUTO_CONFIRM_SAFE" = "1" ]; then
+    echo "$translated"
+    if ! ask_to_run "$translated" "y"; then
+      echo "Skipped"
+      continue
+    fi
+  else
+    if ! ask_to_run "$translated" "n"; then
+      echo "Skipped"
+      continue
+    fi
+  fi
+
+  run_command "$translated"
+
+done
