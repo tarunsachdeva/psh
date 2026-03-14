@@ -44,8 +44,7 @@ PI_INSTALL_GHOSTTY=1 PI_ASSUME_YES_DEFAULT=0 ./scripts/install.sh
 
 - `psh` → `env PI_ASSUME_YES=<default> <install-dir>/pi-shell`
 - `pshr` → `env PI_ASSUME_YES=<default> PI_AUTO_RAW=1 <install-dir>/pi-shell`
-
-(`PI_AUTO_RAW` is included for extension usage in future; current `pi-shell` behavior currently supports `/raw` command-line usage.)
+- `PI_AUTO_RAW=1` mode runs every non-slash input directly (no translation), equivalent to a raw passthrough shell.
 
 ## Runtime commands inside pi-shell
 

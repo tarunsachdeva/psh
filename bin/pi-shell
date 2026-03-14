@@ -6,6 +6,7 @@ PI_BIN="${PI_BIN:-}"
 PI_PROMPT="${PI_PROMPT:-pi> }"
 PI_AUTO_CONFIRM_SAFE="${PI_AUTO_CONFIRM_SAFE:-1}"
 PI_ASSUME_YES="${PI_ASSUME_YES:-0}"
+PI_AUTO_RAW="${PI_AUTO_RAW:-0}"
 PI_SHOW_TRANSLATION="${PI_SHOW_TRANSLATION:-1}"
 PI_HISTORY_FILE="${PI_HISTORY_FILE:-$HOME/.pi-shell_history}"
 PI_MAX_HISTORY="${PI_MAX_HISTORY:-500}"
@@ -201,6 +202,7 @@ pi-shell commands:
   /help                Show this help
   /quit or /exit       Exit
   /raw <command>       Run command without PI translation
+  raw mode             If PI_AUTO_RAW=1, all non-command inputs run directly
   /auto on|off         Toggle auto-confirm for safe commands (currently: on/off)
   /noconfirm on|off    Skip or enable prompts entirely (currently: off)
   /show on|off         Toggle showing translated command (currently: on/off)
@@ -244,6 +246,13 @@ while true; do
       add_to_history "$raw_cmd"
       run_command "$raw_cmd"
       continue
+      ;;
+    *)
+      if [ "$PI_AUTO_RAW" = "1" ] && [ -n "$input" ]; then
+        add_to_history "$input"
+        run_command "$input"
+        continue
+      fi
       ;;
     /auto\ on)
       PI_AUTO_CONFIRM_SAFE=1
