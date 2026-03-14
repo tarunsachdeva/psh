@@ -201,7 +201,7 @@ function print_help() {
 pi-shell commands:
   /help                Show this help
   /quit or /exit       Exit
-  /raw <command>       Run command without PI translation
+  // <command>         Run command without PI translation
   raw mode             If PI_AUTO_RAW=1, all non-command inputs run directly
   /auto on|off         Toggle auto-confirm for safe commands (currently: on/off)
   /noconfirm on|off    Skip or enable prompts entirely (currently: off)
@@ -209,7 +209,7 @@ pi-shell commands:
 
 Any other input is sent to pi for translation, then reviewed/executed.
 Examples:
-  /raw git status
+  // git status
   what's in this dir
   show large files
 EOF
@@ -241,18 +241,19 @@ while true; do
       print_help
       continue
       ;;
-    /raw\ *)
-      raw_cmd="${input#/raw }"
+    //\ *)
+      raw_cmd="${input#// }"
+      if [ -z "$raw_cmd" ]; then
+        echo "Usage: // <command>"
+        continue
+      fi
       add_to_history "$raw_cmd"
       run_command "$raw_cmd"
       continue
       ;;
-    *)
-      if [ "$PI_AUTO_RAW" = "1" ] && [ -n "$input" ]; then
-        add_to_history "$input"
-        run_command "$input"
-        continue
-      fi
+    //)
+      echo "Usage: // <command>"
+      continue
       ;;
     /auto\ on)
       PI_AUTO_CONFIRM_SAFE=1
@@ -283,6 +284,13 @@ while true; do
       PI_SHOW_TRANSLATION=0
       echo "Show translated command: off"
       continue
+      ;;
+    *)
+      if [ "$PI_AUTO_RAW" = "1" ] && [ -n "$input" ]; then
+        add_to_history "$input"
+        run_command "$input"
+        continue
+      fi
       ;;
   esac
 

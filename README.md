@@ -3,7 +3,7 @@
 A small natural-language shell wrapper powered by `pi`.
 
 - Type plain language and it translates to bash via `pi -p`.
-- Optionally bypass translation with `/raw <command>`.
+- Optionally bypass translation with `// <command>`.
 - Built-in safety + optional confirmation flow.
 - Optional Ghostty integration.
 
@@ -49,7 +49,7 @@ PI_INSTALL_GHOSTTY=1 PI_ASSUME_YES_DEFAULT=0 ./scripts/install.sh
 ## Runtime commands inside psh
 
 - `/help`
-- `/raw <command>`
+- `// <command>`
 - `/auto on|off`
 - `/noconfirm on|off`
 - `/show on|off`
@@ -144,5 +144,5 @@ git -C ~/code/psh push --tags
 
 - `psh` accepts `PI_*` environment variables for behavior.
 - `PI_AUTO_RAW=1` makes every non-slash input run directly.
-- Use `/raw <command>` for one-off passthrough.
+- Use `// <command>` for one-off passthrough.
 - `PI_ASSUME_YES` skips runtime confirmation prompts.
