@@ -1,4 +1,4 @@
-# pi-shell
+# psh
 
 A small natural-language shell wrapper powered by `pi`.
 
@@ -17,7 +17,7 @@ A small natural-language shell wrapper powered by `pi`.
 ## Quick install
 
 ```bash
-cd ~/code/pi-shell-repl
+cd ~/code/psh
 ./scripts/install.sh
 ```
 
@@ -46,7 +46,7 @@ PI_INSTALL_GHOSTTY=1 PI_ASSUME_YES_DEFAULT=0 ./scripts/install.sh
 - `pshr` → `env PI_ASSUME_YES=<default> PI_AUTO_RAW=1 <install-dir>/pi-shell`
 - `PI_AUTO_RAW=1` mode runs every non-slash input directly (no translation), equivalent to a raw passthrough shell.
 
-## Runtime commands inside pi-shell
+## Runtime commands inside psh
 
 - `/help`
 - `/raw <command>`
@@ -79,31 +79,31 @@ If you want this as a standalone repo to track changes:
 
 ```bash
 cd ~/code
-mkdir -p pi-shell-repl
+mkdir -p psh
 # replace with your remote URL
 # git init is already done; just add your remote and push
 
-git -C pi-shell-repl init
+git -C psh init
 
-git -C pi-shell-repl remote add origin git@github.com:<your-org-or-user>/pi-shell-repl.git
+git -C psh remote add origin git@github.com:<your-org-or-user>/psh.git
 
-git -C pi-shell-repl add .
-git -C pi-shell-repl commit -m "chore: initialize repository"
-git -C pi-shell-repl branch -M main
-git -C pi-shell-repl push -u origin main
+git -C psh add .
+git -C psh commit -m "chore: initialize repository"
+git -C psh branch -M main
+git -C psh push -u origin main
 ```
 
 ### Current git status quick check
 
 ```bash
-git -C ~/code/pi-shell-repl status --short
-git -C ~/code/pi-shell-repl log --oneline -n 5
+git -C ~/code/psh status --short
+git -C ~/code/psh log --oneline -n 5
 ```
 
 ## Makefile tasks
 
 ```bash
-cd ~/code/pi-shell-repl
+cd ~/code/psh
 
 # Install scripts
 target=install  # (invokes ./scripts/install.sh)
@@ -134,15 +134,15 @@ npm test
 ## Suggested release workflow
 
 ```bash
-git -C ~/code/pi-shell-repl add .
-git -C ~/code/pi-shell-repl commit -m "chore: release"
-git -C ~/code/pi-shell-repl tag v0.1.0
-git -C ~/code/pi-shell-repl push --tags
+git -C ~/code/psh add .
+git -C ~/code/psh commit -m "chore: release"
+git -C ~/code/psh tag v0.1.0
+git -C ~/code/psh push --tags
 ```
 
 ## Docs notes
 
-- `pi-shell` accepts `PI_*` environment variables for behavior.
+- `psh` accepts `PI_*` environment variables for behavior.
 - `PI_AUTO_RAW=1` makes every non-slash input run directly.
 - Use `/raw <command>` for one-off passthrough.
 - `PI_ASSUME_YES` skips runtime confirmation prompts.

@@ -1,5 +1,5 @@
 {
-  "name": "pi-shell-repl",
+  "name": "psh",
   "version": "0.1.0",
   "private": true,
   "description": "A natural-language shell wrapper powered by pi",
