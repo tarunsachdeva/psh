@@ -7,6 +7,8 @@ PI_PROMPT="${PI_PROMPT:-pi> }"
 PI_AUTO_CONFIRM_SAFE="${PI_AUTO_CONFIRM_SAFE:-1}"
 PI_ASSUME_YES="${PI_ASSUME_YES:-0}"
 PI_AUTO_RAW="${PI_AUTO_RAW:-0}"
+PI_CONTINUOUS_SESSION="${PI_CONTINUOUS_SESSION:-1}"
+PI_SESSION_FILE="${PI_SESSION_FILE:-$HOME/.psh-session.jsonl}"
 PI_SHOW_TRANSLATION="${PI_SHOW_TRANSLATION:-1}"
 PI_HISTORY_FILE="${PI_HISTORY_FILE:-$HOME/.pi-shell_history}"
 PI_MAX_HISTORY="${PI_MAX_HISTORY:-500}"
@@ -34,6 +36,7 @@ Rules:
 - Do not include comments.
 - Use the provided working directory as context.
 - If request is ambiguous, prefer the safest sensible command.
+- Never output shell-control commands like exit, quit, return, or logout.
 
 Context:
 Working directory: %WORKDIR%
@@ -44,6 +47,11 @@ EOF
 )
 HISTFILE="$PI_HISTORY_FILE"
 : >"$HISTFILE"
+
+if [ "$PI_CONTINUOUS_SESSION" = "1" ]; then
+  PI_SESSION_DIR="$(dirname "$PI_SESSION_FILE")"
+  mkdir -p "$PI_SESSION_DIR"
+fi
 
 function prompt_text() {
   if [ -z "${PI_PROMPT}" ]; then
@@ -89,10 +97,17 @@ function translate_request() {
   prompt="${prompt//%REQUEST%/$request}"
 
   local response
-  response="$($PI_BIN -p "$prompt")" || {
-    echo "pi translation failed." >&2
-    return 1
-  }
+  if [ "$PI_CONTINUOUS_SESSION" = "1" ]; then
+    response="$($PI_BIN --session "$PI_SESSION_FILE" -p "$prompt")" || {
+      echo "pi translation failed." >&2
+      return 1
+    }
+  else
+    response="$($PI_BIN -p "$prompt")" || {
+      echo "pi translation failed." >&2
+      return 1
+    }
+  fi
 
   local command_line
   command_line="$(extract_command "$response" | head -n 1)"
@@ -102,6 +117,13 @@ function translate_request() {
     echo ""
     return 1
   fi
+
+  case "$command_line" in
+    exit|/exit|quit|/quit|logout|return)
+      echo "Translator returned shell-control command; blocked for safety." >&2
+      return 1
+      ;;
+  esac
 
   printf '%s' "$command_line"
 }
@@ -204,6 +226,7 @@ pi-shell commands:
   // <command>         Run command without PI translation (only raw mode)
   raw mode             If PI_AUTO_RAW=1, all non-command inputs run directly
   /auto on|off         Toggle auto-confirm for safe commands (currently: on/off)
+  PI_CONTINUOUS_SESSION=1 to keep one shared Pi session (default: on)
   /noconfirm on|off    Skip or enable prompts entirely (currently: off)
   /show on|off         Toggle showing translated command (currently: on/off)
 

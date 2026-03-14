@@ -2,7 +2,7 @@
 
 A small natural-language shell wrapper powered by `pi`.
 
-- Type plain language and it translates to bash via `pi -p`.
+- Type plain language and it translates to bash via `pi --session` so the model has one continuous translation session by default.
 - Optionally bypass translation with `// <command>`.
 - Built-in safety + optional confirmation flow.
 - Optional Ghostty integration.
@@ -31,6 +31,8 @@ psh
 ## Install env toggles
 
 - `PI_ASSUME_YES_DEFAULT` (default: `1`) — sets default confirmation mode for the shell command.
+- `PI_CONTINUOUS_SESSION` (default: `1`) — keep a shared Pi session for continuous translation context.
+- `PI_SESSION_FILE` (default: `$HOME/.psh-session.jsonl`) — session file path used when `PI_CONTINUOUS_SESSION=1`.
 - `PI_INSTALL_ALIAS` (default: `1`) — add alias lines to `~/.zshrc`.
 - `PI_INSTALL_GHOSTTY` (default: `0`) — update `~/.config/ghostty/config`.
 
@@ -42,8 +44,8 @@ PI_INSTALL_GHOSTTY=1 PI_ASSUME_YES_DEFAULT=0 ./scripts/install.sh
 
 ## Aliases added by installer
 
-- `psh` → `env PI_ASSUME_YES=<default> <install-dir>/pi-shell`
-- `pshr` → `env PI_ASSUME_YES=<default> PI_AUTO_RAW=1 <install-dir>/pi-shell`
+- `psh` → `env PI_ASSUME_YES=<default> PI_CONTINUOUS_SESSION=<default> <install-dir>/pi-shell`
+- `pshr` → `env PI_ASSUME_YES=<default> PI_AUTO_RAW=1 PI_CONTINUOUS_SESSION=<default> <install-dir>/pi-shell`
 - `PI_AUTO_RAW=1` mode runs every non-slash input directly (no translation), equivalent to a raw passthrough shell.
 
 ## Runtime commands inside psh
@@ -54,6 +56,8 @@ PI_INSTALL_GHOSTTY=1 PI_ASSUME_YES_DEFAULT=0 ./scripts/install.sh
 - `/noconfirm on|off`
 - `/show on|off`
 - `/quit`
+
+Tip: to disable shared conversation (pure one-shot mode), run `env PI_CONTINUOUS_SESSION=0 psh`.
 
 ## Optional manual Ghostty config
 
