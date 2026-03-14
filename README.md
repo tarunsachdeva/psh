@@ -72,3 +72,56 @@ If installed through scripts:
 ```
 
 Or run `~/.local/bin/pi-shell-uninstall` if using previous one-off setup.
+
+## Git setup
+
+If you want this as a standalone repo to track changes:
+
+```bash
+cd ~/code
+mkdir -p pi-shell-repl
+# replace with your remote URL
+# git init is already done; just add your remote and push
+
+git -C pi-shell-repl init
+
+git -C pi-shell-repl remote add origin git@github.com:<your-org-or-user>/pi-shell-repl.git
+
+git -C pi-shell-repl add .
+git -C pi-shell-repl commit -m "chore: initialize repository"
+git -C pi-shell-repl branch -M main
+git -C pi-shell-repl push -u origin main
+```
+
+### Current git status quick check
+
+```bash
+git -C ~/code/pi-shell-repl status --short
+git -C ~/code/pi-shell-repl log --oneline -n 5
+```
+
+## Makefile tasks
+
+```bash
+cd ~/code/pi-shell-repl
+
+# Install scripts
+target=install  # (invokes ./scripts/install.sh)
+make install
+
+# Remove installed files and Ghostty config override
+make uninstall
+
+# Syntax sanity checks
+make test
+
+# Clean workspace
+make clean
+```
+
+## Docs notes
+
+- `pi-shell` accepts `PI_*` environment variables for behavior.
+- `PI_AUTO_RAW=1` makes every non-slash input run directly.
+- Use `/raw <command>` for one-off passthrough.
+- `PI_ASSUME_YES` skips runtime confirmation prompts.
