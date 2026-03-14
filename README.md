@@ -49,7 +49,7 @@ PI_INSTALL_GHOSTTY=1 PI_ASSUME_YES_DEFAULT=0 ./scripts/install.sh
 ## Runtime commands inside psh
 
 - `/help`
-- `// <command>`
+- `// <command>` (only raw command syntax)
 - `/auto on|off`
 - `/noconfirm on|off`
 - `/show on|off`

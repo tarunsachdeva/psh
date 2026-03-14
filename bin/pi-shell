@@ -201,7 +201,7 @@ function print_help() {
 pi-shell commands:
   /help                Show this help
   /quit or /exit       Exit
-  // <command>         Run command without PI translation
+  // <command>         Run command without PI translation (only raw mode)
   raw mode             If PI_AUTO_RAW=1, all non-command inputs run directly
   /auto on|off         Toggle auto-confirm for safe commands (currently: on/off)
   /noconfirm on|off    Skip or enable prompts entirely (currently: off)
